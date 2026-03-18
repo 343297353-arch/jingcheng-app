@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安装璟程 APP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding-top: 40px;
+    }
+    .logo {
+      width: 120px;
+      height: 120px;
+      background: #1a1a2e;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 30px;
+      font-size: 60px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      text-align: center;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 40px;
+    }
+    .step {
+      background: rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .step-num {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #d4af37, #f0c94e);
+      border-radius: 50%;
+      text-align: center;
+      line-height: 32px;
+      font-weight: bold;
+      color: #1a1a2e;
+      margin-right: 12px;
+    }
+    .step-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+    .step-desc {
+      color: rgba(255,255,255,0.8);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-left: 44px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #d4af37, #f0c94e);
+      color: #1a1a2e;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 600;
+      margin-top: 30px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:active {
+      opacity: 0.9;
+      transform: scale(0.98);
+    }
+    .ios-tip, .android-tip {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 10px;
+      margin-left: 44px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+    }
+    .icon {
+      display: inline-block;
+      width: 20px;
+      text-align: center;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">璟</div>
+    <h1>安装璟程 APP</h1>
+    <p class="subtitle">AI 智能酒店预订平台 · 内测版</p>
+
+    <div class="step">
+      <div><span class="step-num">1</span><span class="step-title">点击下方安装按钮</span></div>
+      <div class="step-desc">系统会提示您添加应用到主屏幕</div>
+    </div>
+
+    <div class="step">
+      <div><span class="step-num">2</span><span class="step-title">选择"添加到主屏幕"</span></div>
+      <div class="ios-tip">
+        <strong>iPhone/iPad：</strong><br>
+        <span class="icon">📤</span> 点击 Safari 底部分享按钮<br>
+        <span class="icon">➕</span> 滑动找到"添加到主屏幕"<br>
+        <span class="icon">✅</span> 点击右上角"添加"
+      </div>
+      <div class="android-tip">
+        <strong>Android：</strong><br>
+        <span class="icon">⋮</span> 点击 Chrome 右上角菜单<br>
+        <span class="icon">📲</span> 选择"安装应用"或"添加到主屏幕"<br>
+        <span class="icon">✅</span> 点击"安装"
+      </div>
+    </div>
+
+    <div class="step">
+      <div><span class="step-num">3</span><span class="step-title">完成！</span></div>
+      <div class="step-desc">应用图标会出现在您的主屏幕上，像原生 APP 一样使用</div>
+    </div>
+
+    <button class="btn" onclick="installApp()">📲 立即安装</button>
+
+    <p style="text-align:center;margin-top:20px;color:rgba(255,255,255,0.5);font-size:12px;">
+      内测版 v2.0 · 更新日期：2026-03-17
+    </p>
+  </div>
+
+  <script>
+    let deferredPrompt;
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    async function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('安装结果:', outcome);
+        deferredPrompt = null;
+      } else {
+        // 显示手动安装说明
+        alert('请按以下步骤手动安装：\n\niPhone：\n1. 点击 Safari 底部分享按钮\n2. 选择"添加到主屏幕"\n3. 点击右上角"添加"\n\nAndroid：\n1. 点击 Chrome 菜单\n2. 选择"安装应用"\n3. 点击"安装"');
+      }
+    }
+
+    // 检查是否已安装
+    window.addEventListener('appinstalled', () => {
+      console.log('PWA 已安装');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>璟程 | AI 智能酒店预订</title>
+  <style>
+    /* 简化版样式 - 深空蓝 + 鎏金色设计 */
+    :root {
+      --primary: #1a1a2e; --primary-light: #2d2d44; --accent: #d4af37;
+      --white: #ffffff; --gray: #999999; --gray-light: #e8e8e8;
+      --bg: #f5f7fa; --text: #1a1a2e; --text-light: #666666;
+      --radius: 16px; --shadow: 0 4px 20px rgba(0,0,0,0.08);
+      --nav-height: 60px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow:hidden}
+    #app{height:100%;display:flex;flex-direction:column}
+    .page-container{flex:1;overflow-y:auto;padding-bottom:calc(var(--nav-height) + 20px)}
+    .tab-bar{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-height) + env(safe-area-inset-bottom));background:var(--white);display:flex;border-top:1px solid var(--gray-light);box-shadow:0 -2px 10px rgba(0,0,0,0.05);padding-bottom:env(safe-area-inset-bottom)}
+    .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--gray);font-size:11px;cursor:pointer}
+    .tab-item.active{color:var(--primary)}
+    .tab-icon{width:24px;height:24px}
+    .search-bar{padding:12px 16px;background:var(--primary)}
+    .search-input{width:100%;padding:10px 18px;border-radius:26px;border:none;background:rgba(255,255,255,0.95);font-size:14px}
+    .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin:12px 16px;padding:14px}
+    .hotel-card{display:flex;background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin:12px 16px;overflow:hidden}
+    .hotel-card-img{width:120px;height:120px;flex-shrink:0;background:var(--gray-light)}
+    .hotel-card-img img{width:100%;height:100%;object-fit:cover}
+    .hotel-card-info{flex:1;padding:12px;display:flex;flex-direction:column;justify-content:space-between}
+    .hotel-card-name{font-size:15px;font-weight:600;margin-bottom:4px}
+    .hotel-card-address{font-size:12px;color:var(--text-light);margin-bottom:6px}
+    .rating{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#f59e0b;font-weight:600}
+    .price-tag{display:inline-flex;align-items:baseline;gap:4px}
+    .price-tag .amount{font-size:22px;font-weight:700;color:var(--primary)}
+    .btn{padding:12px 28px;border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer}
+    .btn-primary{background:linear-gradient(135deg,#1a1a2e,#2d2d44);color:#fff}
+    .btn-sm{padding:7px 18px;font-size:13px;border-radius:20px}
+    .header-bar{position:sticky;top:0;background:linear-gradient(135deg,#1a1a2e,#2d2d44);color:#fff;padding:12px 16px;display:flex;align-items:center;z-index:10;min-height:52px}
+    .back-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;margin-right:8px;border-radius:50%;background:rgba(255,255,255,0.1);cursor:pointer}
+    .header-title{flex:1;font-size:17px;font-weight:600;text-align:center}
+    .divider{height:10px;background:var(--bg)}
+    .section-header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px}
+    .section-title{font-size:17px;font-weight:700}
+    .h-scroll{display:flex;gap:12px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
+    .h-scroll::-webkit-scrollbar{display:none}
+    .category-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:16px;background:var(--white)}
+    .category-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+    .category-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff}
+    .category-name{font-size:12px;text-align:center}
+    .tag{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500}
+    .tag-primary{background:rgba(26,26,46,0.08);color:var(--primary)}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:var(--text-light)}
+    .chat-container{padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:140px}
+    .chat-bubble{max-width:80%;padding:14px 18px;border-radius:18px;font-size:14px;line-height:1.6}
+    .chat-bubble.left{align-self:flex-start;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+    .chat-bubble.right{align-self:flex-end;background:linear-gradient(135deg,#1a1a2e,#2d2d44);color:#fff}
+    .chat-input{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;background:var(--white);border-top:1px solid var(--gray-light);padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+    .chat-input input{flex:1;padding:10px 16px;border-radius:24px;border:1px solid var(--gray-light);font-size:14px}
+    .member-card{margin:16px;border-radius:var(--radius);padding:24px;color:#fff;background:linear-gradient(135deg,#6b7280,#4b5563);position:relative;overflow:hidden}
+    .member-card::after{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.1)}
+    .menu-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--white);border-bottom:1px solid var(--gray-light);cursor:pointer}
+    .menu-icon{font-size:22px}
+    .toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(26,26,46,0.9);color:#fff;padding:12px 28px;border-radius:24px;font-size:14px;z-index:9999;white-space:nowrap}
+    .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998}
+    .spinner{width:40px;height:40px;border:3px solid var(--gray-light);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="page-container">
+      <!-- 首页 -->
+      <div v-show="page==='home'">
+        <div class="search-bar">
+          <input class="search-input" v-model="search" placeholder="搜索目的地、酒店名称" @keyup.enter="goHotels">
+        </div>
+        <div class="category-grid">
+          <div v-for="c in categories" :key="c.name" class="category-item" @click="selectCategory(c.type)">
+            <div class="category-icon">{{c.icon}}</div>
+            <div class="category-name">{{c.name}}</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-header"><div class="section-title">热门城市</div></div>
+        <div class="h-scroll">
+          <div v-for="city in cities" :key="city" @click="filterCity=city,goHotels()" style="padding:8px 16px;background:var(--primary);color:#fff;border-radius:20px;font-size:13px;cursor:pointer">{{city}}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-header"><div class="section-title">✨ AI 智能推荐</div></div>
+        <div v-for="h in recommendations" :key="h.id" class="hotel-card" @click="openHotel(h)">
+          <div class="hotel-card-img"><img :src="h.img" loading="lazy"></div>
+          <div class="hotel-card-info">
+            <div>
+              <div class="hotel-card-name">{{h.name}}</div>
+              <div class="hotel-card-address">📍 {{h.city}}·{{h.district}}</div>
+              <div class="rating">⭐ {{h.rating}} ({{h.reviews}}条)</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+              <div class="price-tag"><span class="amount">¥{{h.rooms[0].price}}</span><span style="font-size:12px;color:var(--text-light)">起</span></div>
+              <button class="btn btn-primary btn-sm">预订</button>
+            </div>
+          </div>
+        </div>
+        <div style="height:20px"></div>
+      </div>
+      
+      <!-- 酒店列表 -->
+      <div v-show="page==='hotels'">
+        <div class="header-bar"><div class="back-btn" @click="page='home'">←</div><div class="header-title">酒店列表</div><div style="width:40px"></div></div>
+        <div style="padding:12px 16px;background:var(--white)"><input class="search-input" v-model="search" placeholder="搜索酒店" style="box-shadow:none;border:1px solid var(--gray-light)"></div>
+        <div class="filter-bar" style="display:flex;gap:10px;padding:12px 16px;overflow-x:auto;background:var(--white)">
+          <div v-for="t in types" :key="t.key" @click="filterType=t.key" style="padding:8px 18px;border-radius:22px;font-size:13px;cursor:pointer;white-space:nowrap" :style="{background:filterType===t.key?'var(--primary)':'var(--bg)',color:filterType===t.key?'#fff':'var(--text-light)'}">{{t.icon}} {{t.label}}</div>
+        </div>
+        <div style="padding:12px 16px;font-size:13px;color:var(--text-light)">共找到 <strong style="color:var(--primary)">{{filteredHotels.length}}</strong> 家</div>
+        <div v-for="h in filteredHotels" :key="h.id" class="hotel-card" @click="openHotel(h)">
+          <div class="hotel-card-img"><img :src="h.img" loading="lazy"></div>
+          <div class="hotel-card-info">
+            <div>
+              <div class="hotel-card-name">{{h.name}}</div>
+              <div class="hotel-card-address">📍 {{h.address}}</div>
+              <div class="rating">⭐ {{h.rating}} ({{h.reviews}}条)</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+              <div class="price-tag"><span class="amount">¥{{h.rooms[0].price}}</span><span style="font-size:12px;color:var(--text-light)">起</span></div>
+              <button class="btn btn-primary btn-sm">预订</button>
+            </div>
+          </div>
+        </div>
+        <div v-if="filteredHotels.length===0" class="empty-state"><p>暂无符合条件的住宿</p><button class="btn btn-primary btn-sm" @click="clearFilters" style="margin-top:16px">清除筛选</button></div>
+        <div style="height:20px"></div>
+      </div>
+      
+      <!-- 酒店详情 -->
+      <div v-show="page==='detail'">
+        <div class="header-bar"><div class="back-btn" @click="page='hotels'">←</div><div class="header-title">{{currentHotel.name}}</div><div style="width:40px"></div></div>
+        <div style="height:200px;background:var(--gray-light)"><img :src="currentHotel.img" style="width:100%;height:100%;object-fit:cover"></div>
+        <div class="card">
+          <div style="font-size:20px;font-weight:700;margin-bottom:8px">{{currentHotel.name}}</div>
+          <div style="font-size:13px;color:var(--text-light)">📍 {{currentHotel.address}}</div>
+          <div class="rating" style="margin-top:12px">⭐ {{currentHotel.rating}}分 ({{currentHotel.reviews}}条评价)</div>
+        </div>
+        <div class="card">
+          <div style="font-size:16px;font-weight:700;margin-bottom:12px">酒店介绍</div>
+          <p style="font-size:14px;color:var(--text-light);line-height:1.8">{{currentHotel.desc}}</p>
+        </div>
+        <div class="card">
+          <div style="font-size:16px;font-weight:700;margin-bottom:12px">设施</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span v-for="f in currentHotel.facilities" :key="f" class="tag tag-primary">{{f}}</span>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:16px;font-weight:700;margin-bottom:16px">选择房型</div>
+          <div v-for="r in currentHotel.rooms" :key="r.id" style="border:1px solid var(--gray-light);border-radius:12px;padding:14px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div style="flex:1">
+                <div style="font-size:15px;font-weight:600;margin-bottom:6px">{{r.name}}</div>
+                <div style="font-size:12px;color:var(--text-light)">{{r.bed}} · {{r.area}}㎡</div>
+              </div>
+              <div style="text-align:right">
+                <div style="margin-bottom:8px"><span style="color:var(--primary);font-size:22px;font-weight:700">¥{{r.price}}</span><span style="font-size:12px;color:var(--text-light)">/晚</span></div>
+                <button class="btn btn-primary btn-sm" @click="bookRoom(r)">预订</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      
+      <!-- 订单 -->
+      <div v-show="page==='orders'">
+        <div class="header-bar"><div class="header-title">我的订单</div></div>
+        <div v-if="orders.length>0" style="padding:12px 16px">
+          <div v-for="o in orders" :key="o.id" class="card" style="margin:12px 0">
+            <div style="font-size:12px;color:var(--text-light);margin-bottom:8px">订单号：{{o.id}}</div>
+            <div style="display:flex;gap:12px">
+              <div style="width:80px;height:60px;border-radius:10px;overflow:hidden;background:var(--gray-light)"><img :src="o.hotel_img" style="width:100%;height:100%;object-fit:cover"></div>
+              <div style="flex:1">
+                <div style="font-size:15px;font-weight:600">{{o.hotel_name}}</div>
+                <div style="font-size:12px;color:var(--text-light);margin-top:2px">{{o.room_type}}</div>
+                <div style="font-size:12px;color:var(--text-light);margin-top:2px">{{o.check_in}} ~ {{o.check_out}}</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-light)">
+              <span style="font-size:18px;font-weight:700;color:var(--primary)">¥{{o.total}}</span>
+              <span style="font-size:13px;color:var(--primary)">{{o.status==='pending'?'待入住':'已完成'}}</span>
+            </div>
+          </div>
+        </div>
+        <div v-else class="empty-state"><p>暂无订单</p><button class="btn btn-primary btn-sm" @click="page='hotels'" style="margin-top:16px">去订酒店</button></div>
+        <div style="height:20px"></div>
+      </div>
+      
+      <!-- AI 助手 -->
+      <div v-show="page==='ai'">
+        <div class="header-bar"><div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#d4af37,#f0c94e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px">🤖</div><div><div style="font-size:16px;font-weight:700">璟程 AI 助手</div><div style="font-size:11px;opacity:0.8">24 小时在线服务</div></div></div></div>
+        <div class="chat-container">
+          <div v-for="m in messages" :key="m.id" class="chat-bubble" :class="m.role==='user'?'right':'left'"><div style="white-space:pre-wrap">{{m.content}}</div></div>
+        </div>
+        <div class="chat-input"><div style="display:flex;gap:10px"><input v-model="inputText" placeholder="输入您的问题..." @keyup.enter="sendMessage" style="flex:1;padding:10px 16px;border-radius:24px;border:1px solid var(--gray-light);font-size:14px"><button class="btn btn-primary" @click="sendMessage" style="width:44px;height:44px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center">➤</button></div></div>
+      </div>
+      
+      <!-- 个人中心 -->
+      <div v-show="page==='profile'">
+        <div class="member-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div><div style="font-size:14px;opacity:0.9">尊敬的</div><div style="font-size:24px;font-weight:700;margin:8px 0">{{user.nickname}}</div><div style="display:flex;align-items:center;gap:8px;margin-top:12px"><span style="font-size:28px">🥉</span><div><div style="font-size:16px;font-weight:600">普通会员</div><div style="font-size:12px;opacity:0.8">累计消费 ¥{{user.total_spent}}</div></div></div></div>
+            <div style="text-align:right"><div style="font-size:12px;opacity:0.8">积分</div><div style="font-size:28px;font-weight:700">{{user.points}}</div></div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="background:var(--white)">
+          <div class="menu-item" @click="page='orders'"><span class="menu-icon">📋</span><span style="flex:1;font-size:15px">我的订单</span><span>→</span></div>
+          <div class="menu-item" @click="showToast('收藏功能即将上线')"><span class="menu-icon">❤️</span><span style="flex:1;font-size:15px">我的收藏</span><span>→</span></div>
+          <div class="menu-item" @click="showToast('优惠券功能即将上线')"><span class="menu-icon">🎫</span><span style="flex:1;font-size:15px">优惠券</span><span>→</span></div>
+        </div>
+        <div class="divider"></div>
+        <div style="background:var(--white)">
+          <div class="menu-item" @click="showToast('积分商城即将上线')"><span class="menu-icon">🎁</span><span style="flex:1;font-size:15px">积分商城</span><span>→</span></div>
+          <div class="menu-item" @click="showToast('分红系统即将上线')"><span class="menu-icon">💰</span><span style="flex:1;font-size:15px">邀请分红</span><span>→</span></div>
+        </div>
+        <div class="divider"></div>
+        <div style="background:var(--white)">
+          <div class="menu-item" @click="showToast('客服热线：400-888-8888')"><span class="menu-icon">📞</span><span style="flex:1;font-size:15px">联系客服</span><span>→</span></div>
+          <div class="menu-item" @click="showToast('璟程 v2.0.0')"><span class="menu-icon">❓</span><span style="flex:1;font-size:15px">关于我们</span><span>→</span></div>
+        </div>
+        <div style="padding:24px 16px;text-align:center"><div style="font-size:12px;color:var(--text-light)">璟程 · AI 智能酒店预订平台</div><div style="font-size:12px;color:var(--text-light);margin-top:4px">Version 2.0.0</div></div>
+        <div style="height:20px"></div>
+      </div>
+    </div>
+    
+    <!-- 底部导航 -->
+    <div class="tab-bar" v-show="page!=='detail'">
+      <div class="tab-item" :class="{active:page==='home'}" @click="page='home'"><svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>首页</span></div>
+      <div class="tab-item" :class="{active:page==='hotels'}" @click="page='hotels'"><svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg><span>酒店</span></div>
+      <div class="tab-item" :class="{active:page==='ai'}" @click="page='ai'"><div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#d4af37,#f0c94e);display:flex;align-items:center;justify-content:center;margin-top:-16px;box-shadow:0 4px 15px rgba(212,175,55,0.4)"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:#fff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 4h2v2h-2zm0 4h2v8h-2z"/></svg></div><span>AI 助手</span></div>
+      <div class="tab-item" :class="{active:page==='orders'}" @click="page='orders'"><svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>订单</span></div>
+      <div class="tab-item" :class="{active:page==='profile'}" @click="page='profile'"><svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><span>我的</span></div>
+    </div>
+    
+    <!-- Toast -->
+    <div v-if="toast.show" class="toast">{{toast.msg}}</div>
+    <!-- Loading -->
+    <div v-if="loading" class="loading-overlay"><div class="spinner"></div><div style="margin-top:16px;font-size:14px;color:var(--text-light)">加载中...</div></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.min.js"></script>
+  <script>

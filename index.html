@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<title>璟程 | AI 智能酒店预订</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:#f5f7fa;color:#1a1a2e;font-size:14px;height:100vh;overflow:hidden;transition:background 0.3s,color 0.3s}
+body.dark{background:#0d1117;color:#c9d1d9}
+body.dark .card,body.dark .hotel-card,body.dark .menu-item{background:#161b22;border-color:#30363d}
+body.dark .tabbar,body.dark .header,body.dark .chat-input-wrap{background:#161b22;border-color:#30363d}
+body.dark .filter-chip,body.dark .city-tag{background:#21262d;color:#c9d1d9}
+body.dark .search-input,body.dark .chat-input{background:#0d1117;border-color:#30363d;color:#c9d1d9}
+#app{height:100%;display:flex;flex-direction:column}
+.page{flex:1;overflow-y:auto;padding-bottom:80px;display:none}
+.page.active{display:block}
+.tabbar{position:fixed;bottom:0;left:0;right:0;height:60px;background:#fff;display:flex;border-top:1px solid #e8e8e8;z-index:100}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#999;font-size:11px;cursor:pointer;position:relative}
+.tab.active{color:#1a1a2e}
+.tab svg{width:24px;height:24px;margin-bottom:2px}
+.tab-badge{position:absolute;top:4px;right:20%;background:#ef4444;color:#fff;font-size:9px;padding:2px 5px;border-radius:10px}
+.header{position:sticky;top:0;background:linear-gradient(135deg,#1a1a2e,#2d2d44);color:#fff;padding:12px 16px;display:flex;align-items:center;z-index:10}
+.back-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;margin-right:8px;border-radius:50%;background:rgba(255,255,255,0.1);cursor:pointer}
+.header-title{flex:1;font-size:17px;font-weight:600;text-align:center}
+.header-actions{display:flex;gap:12px}
+.header-icon{font-size:20px;cursor:pointer}
+.search-bar{padding:12px 16px;background:linear-gradient(135deg,#1a1a2e,#2d2d44)}
+.search-input{width:100%;padding:10px 18px;border-radius:26px;border:none;background:rgba(255,255,255,0.95);font-size:14px}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);margin:12px 16px;padding:14px;transition:background 0.3s}
+.hotel-card{display:flex;background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);margin:12px 16px;overflow:hidden;cursor:pointer;transition:background 0.3s}
+.hotel-img{width:120px;height:120px;flex-shrink:0;background:#e8e8e8;position:relative}
+.hotel-img img{width:100%;height:100%;object-fit:cover}
+.hotel-fav{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.9);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+.hotel-info{flex:1;padding:12px;display:flex;flex-direction:column;justify-content:space-between}
+.hotel-name{font-size:15px;font-weight:600;margin-bottom:4px}
+.hotel-addr{font-size:12px;color:#666;margin-bottom:6px}
+.rating{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#f59e0b;font-weight:600}
+.price{font-size:22px;font-weight:700;color:#1a1a2e}
+.btn{padding:8px 18px;border-radius:20px;border:none;font-size:13px;font-weight:600;cursor:pointer}
+.btn-primary{background:linear-gradient(135deg,#1a1a2e,#2d2d44);color:#fff}
+.btn-outline{background:transparent;border:1px solid #1a1a2e;color:#1a1a2e}
+.divider{height:10px;background:#f5f7fa}
+.section{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px}
+.section-title{font-size:17px;font-weight:700}
+.h-scroll{display:flex;gap:12px;overflow-x:auto;padding:0 16px 12px}
+.h-scroll::-webkit-scrollbar{display:none}
+.city-tag{padding:8px 16px;background:#1a1a2e;color:#fff;border-radius:20px;font-size:13px;white-space:nowrap;cursor:pointer}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:16px;background:#fff}
+.cat-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+.cat-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(135deg,#1a1a2e,#2d2d44);color:#fff}
+.cat-name{font-size:12px;text-align:center}
+.filter-bar{display:flex;gap:10px;padding:12px 16px;overflow-x:auto;background:#fff}
+.filter-chip{padding:8px 18px;border-radius:22px;font-size:13px;white-space:nowrap;cursor:pointer;background:#f5f7fa;color:#666;transition:all 0.3s}
+.filter-chip.active{background:#1a1a2e;color:#fff}
+.chat-box{padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:140px}
+.chat-msg{max-width:80%;padding:14px 18px;border-radius:18px;font-size:14px;line-height:1.6}
+.chat-msg.left{align-self:flex-start;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.chat-msg.right{align-self:flex-end;background:linear-gradient(135deg,#1a1a2e,#2d2d44);color:#fff}
+.chat-input-wrap{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;background:#fff;border-top:1px solid #e8e8e8;display:flex;gap:10px}
+.chat-input{flex:1;padding:10px 16px;border-radius:24px;border:1px solid #e8e8e8;font-size:14px}
+.send-btn{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1a1a2e,#2d2d44);color:#fff;border:none;font-size:18px;cursor:pointer}
+.member-card{margin:16px;border-radius:16px;padding:24px;color:#fff;background:linear-gradient(135deg,#6b7280,#4b5563);position:relative;overflow:hidden}
+.member-card::after{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.1)}
+.menu-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:#fff;border-bottom:1px solid #e8e8e8;cursor:pointer;transition:background 0.3s}
+.menu-icon{font-size:22px}
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(26,26,46,0.9);color:#fff;padding:12px 28px;border-radius:24px;font-size:14px;z-index:9999;white-space:nowrap;display:none}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:#999}
+.tag{display:inline-flex;padding:4px 12px;border-radius:20px;font-size:11px;background:rgba(26,26,46,0.08);color:#1a1a2e}
+.room-item{border:1px solid #e8e8e8;border-radius:12px;padding:14px;margin-bottom:12px}
+.room-row{display:flex;justify-content:space-between;align-items:flex-start}
+.loc-info{padding:12px 16px;background:#e0f2fe;border-radius:12px;margin:12px 16px;display:flex;align-items:center;gap:12px}
+.loc-icon{font-size:24px}
+.loc-text{flex:1;font-size:13px;color:#0369a1}
+.coupon-card{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;padding:14px;margin-bottom:12px;position:relative;overflow:hidden}
+.coupon-card::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.3)}
+.coupon-info{flex:1;z-index:1}
+.coupon-amount{font-size:24px;font-weight:700;color:#92400e}
+.coupon-desc{font-size:12px;color:#92400e;margin-top:4px}
+.coupon-btn{padding:6px 16px;background:#92400e;color:#fff;border:none;border-radius:20px;font-size:12px;cursor:pointer;z-index:1}
+.coupon-btn.used{background:#9ca3af;cursor:not-allowed}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal.active{display:flex}
+.modal-content{background:#fff;border-radius:24px 24px 0 0;width:100%;max-height:70vh;overflow-y:auto;padding:24px 20px;animation:slideUp 0.3s}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:48px;height:5px;background:#e8e8e8;border-radius:3px;margin:0 auto 20px}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.star-rating{display:flex;gap:4px;font-size:24px}
+.star-rating span{cursor:pointer;color:#e8e8e8}
+.star-rating span.active{color:#f59e0b}
+.review-item{border-bottom:1px solid #e8e8e8;padding:12px 0}
+.review-header{display:flex;justify-content:space-between;margin-bottom:8px}
+.review-stars{color:#f59e0b;font-size:14px}
+.review-text{font-size:14px;color:#666;line-height:1.5}
+.loc-btn{padding:8px 16px;background:#1a1a2e;color:#fff;border:none;border-radius:20px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 首页 -->
+  <div id="page-home" class="page active">
+    <div class="search-bar">
+      <input class="search-input" placeholder="搜索目的地、酒店名称" id="home-search">
+    </div>
+    <div class="loc-info" id="loc-info" style="display:none">
+      <div class="loc-icon">📍</div>
+      <div class="loc-text" id="loc-text">正在获取您的位置...</div>
+      <button class="loc-btn" onclick="refreshLocation()">🔄 刷新</button>
+    </div>
+    <div class="cat-grid" id="cat-grid"></div>
+    <div class="divider"></div>
+    <div class="section"><div class="section-title">热门城市</div></div>
+    <div class="h-scroll" id="city-list"></div>
+    <div class="divider"></div>
+    <div class="section"><div class="section-title">✨ AI 智能推荐</div></div>
+    <div id="rec-list"></div>
+    <div class="divider"></div>
+    <div class="section"><div class="section-title">🏠 附近酒店</div><div style="font-size:13px;color:#666" id="nearby-count">0 家</div></div>
+    <div id="nearby-list"></div>
+  </div>
+
+  <!-- 酒店列表 -->
+  <div id="page-hotels" class="page">
+    <div class="header">
+      <div class="back-btn" onclick="showPage('home')">←</div>
+      <div class="header-title">酒店列表</div>
+      <div class="header-actions">
+        <span class="header-icon" onclick="toggleTheme()">🌙</span>
+        <span class="header-icon" onclick="openFavorites()">❤️</span>
+      </div>
+    </div>
+    <div style="padding:12px 16px;background:#fff">
+      <input class="search-input" id="hotel-search" placeholder="搜索酒店" style="border:1px solid #e8e8e8">
+    </div>
+    <div class="filter-bar" id="type-filter"></div>
+    <div style="padding:12px 16px;font-size:13px;color:#666">共找到 <strong id="hotel-count" style="color:#1a1a2e">0</strong> 家</div>
+    <div id="hotel-list"></div>
+    <div id="hotel-empty" class="empty" style="display:none"><p>暂无符合条件的住宿</p><button class="btn btn-primary" onclick="clearFilters()" style="margin-top:16px">清除筛选</button></div>
+  </div>
+
+  <!-- 酒店详情 -->
+  <div id="page-detail" class="page">
+    <div class="header">
+      <div class="back-btn" onclick="showPage('hotels')">←</div>
+      <div class="header-title" id="detail-title">酒店详情</div>
+      <div class="header-actions">
+        <span class="header-icon" id="detail-fav" onclick="toggleFavorite()">🤍</span>
+        <span class="header-icon" onclick="shareHotel()">📤</span>
+      </div>
+    </div>
+    <div style="height:200px;background:#e8e8e8"><img id="detail-img" style="width:100%;height:100%;object-fit:cover"></div>
+    <div class="card">
+      <div style="font-size:20px;font-weight:700;margin-bottom:8px" id="detail-name"></div>
+      <div style="font-size:13px;color:#666" id="detail-addr"></div>
+      <div class="rating" style="margin-top:12px">⭐ <span id="detail-rating"></span>分 (<span id="detail-reviews"></span>条评价) <span style="color:#1a1a2e;cursor:pointer;margin-left:8px" onclick="openReviews()">查看全部评价</span></div>
+    </div>
+    <div class="card">
+      <div style="font-size:16px;font-weight:700;margin-bottom:12px">酒店介绍</div>
+      <p id="detail-desc" style="font-size:14px;color:#666;line-height:1.8"></p>
+    </div>
+    <div class="card">
+      <div style="font-size:16px;font-weight:700;margin-bottom:12px">设施</div>
+      <div id="detail-facilities" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:16px;font-weight:700;margin-bottom:16px">选择房型</div>
+      <div id="room-list"></div>
+    </div>
+  </div>
+
+  <!-- 订单 -->
+  <div id="page-orders" class="page">
+    <div class="header">
+      <div class="header-title">我的订单</div>
+      <div class="header-actions">
+        <span class="header-icon" onclick="showCoupons()">🎫</span>
+      </div>
+    </div>
+    <div id="orders-list" style="padding:12px 16px"></div>
+    <div id="orders-empty" class="empty" style="display:none"><p>暂无订单</p><button class="btn btn-primary" onclick="showPage('hotels')" style="margin-top:16px">去订酒店</button></div>
+  </div>
+
+  <!-- AI 助手 -->
+  <div id="page-ai" class="page">
+    <div class="header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#d4af37,#f0c94e);display:flex;align-items:center;justify-content:center;font-size:18px">🤖</div>
+        <div><div style="font-size:16px;font-weight:700">璟程 AI 助手</div><div style="font-size:11px;opacity:0.8">24 小时在线服务</div></div>
+      </div>
+      <div class="header-actions">
+        <span class="header-icon" onclick="openService()">👨‍💼</span>
+      </div>
+    </div>
+    <div class="chat-box" id="chat-box"></div>
+    <div class="chat-input-wrap">
+      <input class="chat-input" id="chat-input" placeholder="输入您的问题...">
+      <button class="send-btn" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+
+  <!-- 个人中心 -->
+  <div id="page-profile" class="page">
+    <div class="member-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:14px;opacity:0.9">尊敬的</div>
+          <div style="font-size:24px;font-weight:700;margin:8px 0" id="profile-name"></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
+            <span style="font-size:28px" id="profile-level">🥉</span>
+            <div>
+              <div style="font-size:16px;font-weight:600" id="profile-level-name">普通会员</div>
+              <div style="font-size:12px;opacity:0.8">累计消费 ¥<span id="profile-spent">0</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;opacity:0.8">积分</div>
+          <div style="font-size:28px;font-weight:700" id="profile-points">0</div>
+        </div>
+      </div>
+    </div>
+    
+
+    
+    <!-- 优惠券预览 -->
+    <div class="card" style="margin:16px" onclick="showCoupons()" style="cursor:pointer">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:16px;font-weight:700">🎫 我的优惠券</div>
+        <div style="font-size:13px;color:#666">共 <span id="coupon-count">0</span> 张</div>
+      </div>
+    </div>
+    
+    <div class="divider"></div>
+    <div style="background:#fff">
+      <div class="menu-item" onclick="showPage('orders')"><span class="menu-icon">📋</span><span style="flex:1;font-size:15px">我的订单</span><span>→</span></div>
+      <div class="menu-item" onclick="openFavorites()"><span class="menu-icon">❤️</span><span style="flex:1;font-size:15px">我的收藏</span><span id="fav-count" style="font-size:12px;color:#666;margin-right:8px">0</span><span>→</span></div>
+      <div class="menu-item" onclick="showCoupons()"><span class="menu-icon">🎫</span><span style="flex:1;font-size:15px">优惠券</span><span>→</span></div>
+    </div>
+    <div class="divider"></div>
+    <div style="background:#fff">
+      <div class="menu-item" onclick="toast('积分商城即将上线')"><span class="menu-icon">🎁</span><span style="flex:1;font-size:15px">积分商城</span><span>→</span></div>
+      <div class="menu-item" onclick="toast('分红系统即将上线')"><span class="menu-icon">💰</span><span style="flex:1;font-size:15px">邀请分红</span><span>→</span></div>
+    </div>
+    <div class="divider"></div>
+    <div style="background:#fff">
+      <div class="menu-item" onclick="openService()"><span class="menu-icon">👨‍💼</span><span style="flex:1;font-size:15px">在线客服</span><span>→</span></div>
+      <div class="menu-item" onclick="toggleTheme()"><span class="menu-icon" id="theme-icon">🌙</span><span style="flex:1;font-size:15px">夜间模式</span><span>→</span></div>
+      <div class="menu-item" onclick="toast('璟程 v2.1.0')"><span class="menu-icon">❓</span><span style="flex:1;font-size:15px">关于我们</span><span>→</span></div>
+    </div>
+    <div style="padding:24px 16px;text-align:center"><div style="font-size:12px;color:#666">璟程 · AI 智能酒店预订平台</div><div style="font-size:12px;color:#666;margin-top:4px">Version 2.1.0</div></div>
+  </div>
+
+  <!-- 收藏列表弹窗 -->
+  <div class="modal" id="fav-modal">
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <div class="modal-title">我的收藏 ❤️</div>
+      <div id="fav-list"></div>
+      <div id="fav-empty" class="empty" style="padding:40px 20px"><p>暂无收藏的酒店</p><button class="btn btn-primary" onclick="closeModal('fav-modal')" style="margin-top:16px">去逛逛</button></div>
+    </div>
+  </div>
+
+  <!-- 优惠券弹窗 -->
+  <div class="modal" id="coupon-modal">
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🎫 我的优惠券</div>
+      <div id="coupon-list"></div>
+      <div id="coupon-empty" class="empty" style="padding:40px 20px"><p>暂无优惠券</p><button class="btn btn-primary" onclick="claimCoupon()" style="margin-top:16px">领取优惠券</button></div>
+    </div>
+  </div>
+
+  <!-- 评价弹窗 -->
+  <div class="modal" id="review-modal">
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <div class="modal-title">⭐ 用户评价</div>
+      <div id="review-list"></div>
+      <div class="card" style="margin-top:16px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">写下您的评价</div>
+        <div class="star-rating" id="review-stars"><span onclick="setStars(1)">★</span><span onclick="setStars(2)">★</span><span onclick="setStars(3)">★</span><span onclick="setStars(4)">★</span><span onclick="setStars(5)">★</span></div>
+        <textarea id="review-text" placeholder="分享您的入住体验..." style="width:100%;padding:12px;border:1px solid #e8e8e8;border-radius:12px;margin-top:12px;font-size:14px;resize:none" rows="3"></textarea>
+        <button class="btn btn-primary" onclick="submitReview()" style="width:100%;margin-top:12px">提交评价</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 客服弹窗 -->
+  <div class="modal" id="service-modal">
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <div class="modal-title">👨‍💼 在线客服</div>
+      <div class="card" style="text-align:center;padding:32px">
+        <div style="font-size:48px;margin-bottom:16px">💬</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px">客服在线时间</div>
+        <div style="font-size:14px;color:#666;margin-bottom:16px">周一至周日 9:00-22:00</div>
+        <div class="menu-item" onclick="toast('客服热线：400-888-8888')"><span class="menu-icon">📞</span><span style="flex:1">拨打客服电话</span></div>
+        <div class="menu-item" onclick="toast('客服微信：jingcheng-kefu')"><span class="menu-icon">💬</span><span style="flex:1">添加客服微信</span></div>
+        <div class="menu-item" onclick="toast('客服邮箱：service@jingcheng.com')"><span class="menu-icon">📧</span><span style="flex:1">发送邮件</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="tabbar">
+    <div class="tab active" onclick="showPage('home')" id="tab-home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>首页</span></div>
+    <div class="tab" onclick="showPage('hotels')" id="tab-hotels"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg><span>酒店</span></div>
+    <div class="tab" onclick="showPage('ai')" id="tab-ai"><div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#d4af37,#f0c94e);display:flex;align-items:center;justify-content:center;margin-top:-16px;box-shadow:0 4px 15px rgba(212,175,55,0.4);color:#fff;font-size:20px">🤖</div><span>AI 助手</span></div>
+    <div class="tab" onclick="showPage('orders')" id="tab-orders"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>订单</span><span class="tab-badge" id="order-badge" style="display:none">0</span></div>
+    <div class="tab" onclick="showPage('profile')" id="tab-profile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><span>我的</span></div>
+  </div>
+  <div id="toast" class="toast"></div>
+</div>
+
+<script>
+// 酒店数据（新增距离信息）
+const hotels=[
+  {id:1,name:'璟程·丽思卡尔顿酒店',city:'上海',district:'陆家嘴',address:'上海市浦东新区陆家嘴环路 1000 号',star:5,rating:4.9,reviews:2856,brand:'丽思卡尔顿',type:'hotel',priceRange:'high',img:'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',desc:'坐落于陆家嘴金融中心，俯瞰黄浦江美景，提供顶级奢华住宿体验。',facilities:['免费 WiFi','停车场','健身房','游泳池','SPA','餐厅'],rooms:[{id:101,name:'豪华江景大床房',bed:'大床',area:55,price:2888,breakfast:true}],lat:31.2397,lng:121.4990},
+  {id:2,name:'璟程·华尔道夫酒店',city:'北京',district:'王府井',address:'北京市东城区金鱼胡同 8 号',star:5,rating:4.8,reviews:3201,brand:'华尔道夫',type:'hotel',priceRange:'high',img:'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400',desc:'位于王府井核心商圈，融合百年历史与现代奢华。',facilities:['免费 WiFi','停车场','健身房','游泳池','SPA'],rooms:[{id:201,name:'豪华客房',bed:'大床',area:48,price:2588,breakfast:true}],lat:39.9139,lng:116.4110},
+  {id:3,name:'璟程·四季酒店',city:'广州',district:'珠江新城',address:'广州市天河区珠江西路 5 号',star:5,rating:4.9,reviews:1987,brand:'四季',type:'hotel',priceRange:'high',img:'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400',desc:'占据 IFC 高层，俯瞰珠江新城天际线。',facilities:['免费 WiFi','停车场','健身房','游泳池'],rooms:[{id:301,name:'豪华城景房',bed:'大床',area:52,price:2388,breakfast:true}],lat:23.1175,lng:113.3212},
+  {id:4,name:'璟程·亚朵酒店',city:'杭州',district:'西湖区',address:'杭州市西湖区文三路 128 号',star:4,rating:4.7,reviews:4521,brand:'亚朵',type:'hotel',priceRange:'mid',img:'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=400',desc:'人文主题酒店，配备竹居图书馆。',facilities:['免费 WiFi','停车场','健身房','图书馆'],rooms:[{id:401,name:'高级大床房',bed:'大床',area:30,price:458,breakfast:true}],lat:30.2741,lng:120.1551},
+  {id:5,name:'璟程·全季酒店',city:'成都',district:'春熙路',address:'成都市锦江区红星路三段 99 号',star:4,rating:4.6,reviews:5632,brand:'全季',type:'hotel',priceRange:'mid',img:'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=400',desc:'位于春熙路商圈，步行可达太古里。',facilities:['免费 WiFi','健身房','洗衣房'],rooms:[{id:501,name:'高级大床房',bed:'大床',area:28,price:398,breakfast:true}],lat:30.6572,lng:104.0792},
+  {id:6,name:'璟程·汉庭酒店',city:'南京',district:'新街口',address:'南京市鼓楼区中山路 188 号',star:3,rating:4.4,reviews:6789,brand:'汉庭',type:'hotel',priceRange:'low',img:'https://images.unsplash.com/photo-1608649237243-88408aa6ca47?w=400',desc:'位于新街口核心商圈，性价比高。',facilities:['免费 WiFi','24 小时前台'],rooms:[{id:701,name:'经济大床房',bed:'大床',area:20,price:198,breakfast:false}],lat:32.0584,lng:118.7965},
+  {id:7,name:'璟程·丽江古城庭院民宿',city:'丽江',district:'古城区',address:'丽江市古城区五一街兴仁下段',star:4,rating:4.8,reviews:1256,brand:'璟程精选',type:'homestay',priceRange:'mid',img:'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',desc:'纳西族传统庭院建筑，三坊一照壁。',facilities:['免费 WiFi','庭院','茶室'],rooms:[{id:901,name:'观景大床房',bed:'大床',area:28,price:368,breakfast:true}],lat:26.8721,lng:100.2360},
+  {id:8,name:'璟程·莫干山竹海民宿',city:'湖州',district:'德清县',address:'湖州市德清县莫干山镇',star:5,rating:4.9,reviews:892,brand:'璟程精选',type:'homestay',priceRange:'high',img:'https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=400',desc:'隐于万亩竹海之中，配备无边泳池。',facilities:['免费 WiFi','停车场','游泳池','餐厅'],rooms:[{id:1001,name:'竹景大床房',bed:'大床',area:40,price:888,breakfast:true}],lat:30.6088,lng:119.8472}
+];
+
+// 用户评价数据
+const hotelReviews={
+  1:[{user:'张先生',stars:5,text:'服务非常好，江景房视野绝佳！',date:'2026-03-15'},{user:'李女士',stars:5,text:'豪华体验，值得推荐！',date:'2026-03-14'}],
+  2:[{user:'王先生',stars:4,text:'位置很好，房间略小',date:'2026-03-13'}],
+  3:[{user:'陈女士',stars:5,text:'设施很新，服务周到',date:'2026-03-12'}]
+};
+
+const cities=['上海','北京','广州','深圳','杭州','成都','重庆','南京','西安','苏州','三亚','厦门','大理','丽江'];
+const categories=[{icon:'🏨',name:'酒店',type:'hotel'},{icon:'🏡',name:'民宿',type:'homestay'},{icon:'🏢',name:'公寓',type:'apartment'},{icon:'🎒',name:'青旅',type:'hostel'}];
+const types=[{key:'all',label:'全部',icon:'🏨'},{key:'hotel',label:'酒店',icon:'🏨'},{key:'homestay',label:'民宿',icon:'🏡'},{key:'apartment',label:'公寓',icon:'🏢'},{key:'hostel',label:'青旅',icon:'🎒'}];
+
+// 优惠券数据
+const coupons=[
+  {id:1,amount:100,desc:'满 1000 元可用',min:1000,used:false},
+  {id:2,amount:50,desc:'满 500 元可用',min:500,used:false},
+  {id:3,amount:200,desc:'满 2000 元可用',min:2000,used:true}
+];
+
+// 状态
+let currentPage='home',filterType='all',filterCity='',currentHotel=null,userLocation=null,reviewStars=0;
+let orders=JSON.parse(localStorage.getItem('jc_orders')||'[]');
+let favorites=JSON.parse(localStorage.getItem('jc_favorites')||'[]');
+let userCoupons=JSON.parse(localStorage.getItem('jc_coupons')||'[]');
+
+let user=JSON.parse(localStorage.getItem('jc_user')||'{"nickname":"璟程用户","total_spent":0,"points":0,"level":"normal"}');
+let isDarkMode=localStorage.getItem('jc_darkmode')==='true';
+
+// 初始化
+function init(){
+  if(isDarkMode)document.body.classList.add('dark');
+  renderHome();
+  renderHotels();
+  renderOrders();
+  renderProfile();
+  renderAI();
+  getLocation();
+  document.getElementById('home-search').addEventListener('keyup',e=>{if(e.key==='Enter'){localStorage.setItem('jc_search',e.target.value);showPage('hotels');renderHotels();}});
+  document.getElementById('hotel-search').addEventListener('keyup',e=>{localStorage.setItem('jc_search',e.target.value);renderHotels();});
+  updateOrderBadge();
+}
+
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+page).classList.add('active');
+  currentPage=page;
+  if(page==='hotels')renderHotels();
+  if(page==='orders')renderOrders();
+  if(page==='profile')renderProfile();
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2000);}
+
+// 定位功能
+function getLocation(){
+  if('geolocation' in navigator){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        userLocation={lat:pos.coords.latitude,lng:pos.coords.longitude};
+        document.getElementById('loc-info').style.display='flex';
+        document.getElementById('loc-text').textContent=`当前位置：${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+        renderNearby();
+      },
+      err=>{
+        console.log('定位失败',err);
+        document.getElementById('loc-text').textContent='定位失败，请手动授权';
+      },
+      {enableHighAccuracy:true,timeout:10000}
+    );
+  }
+}
+
+function refreshLocation(){
+  toast('📍 正在刷新位置...');
+  getLocation();
+}
+
+function calculateDistance(lat1,lng1,lat2,lng2){
+  const R=6371;const dLat=(lat2-lat1)*Math.PI/180;const dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  return R*c;
+}
+
+function renderNearby(){
+  if(!userLocation){document.getElementById('nearby-list').innerHTML='';document.getElementById('nearby-count').textContent='0 家';return;}
+  const nearby=hotels.map(h=>({...h,distance:calculateDistance(userLocation.lat,userLocation.lng,h.lat,h.lng)})).filter(h=>h.distance<50).sort((a,b)=>a.distance-b.distance).slice(0,5);
+  document.getElementById('nearby-count').textContent=nearby.length+'家';
+  document.getElementById('nearby-list').innerHTML=nearby.map(h=>`<div class="hotel-card" onclick="openHotel(${h.id})"><div class="hotel-img"><img src="${h.img}" loading="lazy"></div><div class="hotel-info"><div><div class="hotel-name">${h.name}</div><div class="hotel-addr">📍 ${h.city} · 距离${h.distance.toFixed(1)}km</div><div class="rating">⭐ ${h.rating} (${h.reviews}条)</div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><div class="price">¥${h.rooms[0].price}</div><button class="btn btn-primary">预订</button></div></div></div>`).join('');
+}
+
+// 收藏功能
+function toggleFavorite(){
+  const idx=favorites.findIndex(f=>f.id===currentHotel.id);
+  if(idx>=0){favorites.splice(idx,1);document.getElementById('detail-fav').textContent='🤍';toast('已取消收藏');}
+  else{favorites.push(currentHotel);document.getElementById('detail-fav').textContent='❤️';toast('已加入收藏');}
+  localStorage.setItem('jc_favorites',JSON.stringify(favorites));
+  renderProfile();
+}
+
+function openFavorites(){
+  document.getElementById('fav-list').innerHTML=favorites.length>0?favorites.map(h=>`<div class="hotel-card" onclick="openHotel(${h.id});closeModal('fav-modal')" style="margin:12px 0"><div class="hotel-img"><img src="${h.img}" loading="lazy"></div><div class="hotel-info"><div class="hotel-name">${h.name}</div><div class="hotel-addr">${h.city}</div><div class="price">¥${h.rooms[0].price}</div></div></div>`).join(''):'<div class="empty">暂无收藏</div>';
+  document.getElementById('fav-empty').style.display=favorites.length>0?'none':'block';
+  document.getElementById('fav-modal').classList.add('active');
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+
+// 优惠券功能
+function showCoupons(){
+  document.getElementById('coupon-list').innerHTML=userCoupons.length>0?userCoupons.map(c=>`<div class="coupon-card"><div class="coupon-info"><div class="coupon-amount">¥${c.amount}</div><div class="coupon-desc">${c.desc}</div></div><button class="coupon-btn ${c.used?'used':''}" ${c.used?'disabled':''}>${c.used?'已使用':'使用'}</button></div>`).join(''):'<div class="empty">暂无优惠券</div>';
+  document.getElementById('coupon-empty').style.display=userCoupons.length>0?'none':'block';
+  document.getElementById('coupon-modal').classList.add('active');
+}
+
+function claimCoupon(){
+  const newCoupon={id:Date.now(),amount:100,desc:'满 1000 元可用',min:1000,used:false};
+  userCoupons.push(newCoupon);
+  localStorage.setItem('jc_coupons',JSON.stringify(userCoupons));
+  toast('🎉 领取成功！');
+  showCoupons();
+  renderProfile();
+}
+
+
+
+// 夜间模式
+function toggleTheme(){
+  isDarkMode=!isDarkMode;
+  document.body.classList.toggle('dark',isDarkMode);
+  localStorage.setItem('jc_darkmode',isDarkMode);
+  document.getElementById('theme-icon').textContent=isDarkMode?'☀️':'🌙';
+  toast(isDarkMode?'已开启夜间模式':'已关闭夜间模式');
+}
+
+// 评价功能
+function openReviews(){
+  const reviews=hotelReviews[currentHotel.id]||[];
+  document.getElementById('review-list').innerHTML=reviews.length>0?reviews.map(r=>`<div class="review-item"><div class="review-header"><span style="font-weight:600">${r.user}</span><span class="review-stars">${'★'.repeat(r.stars)}</span></div><div class="review-text">${r.text}</div><div style="font-size:12px;color:#999;margin-top:4px">${r.date}</div></div>`).join(''):'<div class="empty">暂无评价，快来成为第一个评价的人吧！</div>';
+  document.getElementById('review-modal').classList.add('active');
+}
+
+function setStars(n){reviewStars=n;document.querySelectorAll('#review-stars span').forEach((s,i)=>s.classList.toggle('active',i<n));}
+
+function submitReview(){
+  if(reviewStars===0){toast('请选择评分');return;}
+  const text=document.getElementById('review-text').value.trim();
+  if(!text){toast('请输入评价内容');return;}
+  if(!hotelReviews[currentHotel.id])hotelReviews[currentHotel.id]=[];
+  hotelReviews[currentHotel.id].unshift({user:user.nickname,stars:reviewStars,text:text,date:new Date().toISOString().split('T')[0]});
+  currentHotel.reviews++;
+  toast('🎉 评价提交成功！');
+  closeModal('review-modal');
+  document.getElementById('review-text').value='';
+  reviewStars=0;
+  document.querySelectorAll('#review-stars span').forEach(s=>s.classList.remove('active'));
+}
+
+// 分享功能
+function shareHotel(){
+  if(navigator.share){
+    navigator.share({title:currentHotel.name,text:currentHotel.desc,url:location.href}).catch(()=>{});
+  }else{
+    const text=`${currentHotel.name} - ${currentHotel.desc} 价格：¥${currentHotel.rooms[0].price}起`;
+    navigator.clipboard.writeText(text);
+    toast('📋 酒店信息已复制');
+  }
+}
+
+// 客服功能
+function openService(){document.getElementById('service-modal').classList.add('active');}
+
+// 渲染函数
+function renderHome(){
+  document.getElementById('cat-grid').innerHTML=categories.map(c=>`<div class="cat-item" onclick="filterType='${c.type}';showPage('hotels')"><div class="cat-icon">${c.icon}</div><div class="cat-name">${c.name}</div></div>`).join('');
+  document.getElementById('city-list').innerHTML=cities.map(c=>`<div class="city-tag" onclick="filterCity='${c}';showPage('hotels')">${c}</div>`).join('');
+  const rec=hotels.filter(h=>h.rating>=4.7).slice(0,5);
+  document.getElementById('rec-list').innerHTML=rec.map(h=>`<div class="hotel-card" onclick="openHotel(${h.id})"><div class="hotel-img"><img src="${h.img}" loading="lazy"><div class="hotel-fav" onclick="event.stopPropagation();quickFav(${h.id})">${favorites.some(f=>f.id===h.id)?'❤️':'🤍'}</div></div><div class="hotel-info"><div><div class="hotel-name">${h.name}</div><div class="hotel-addr">📍 ${h.city}·${h.district}</div><div class="rating">⭐ ${h.rating} (${h.reviews}条)</div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><div class="price">¥${h.rooms[0].price}</div><button class="btn btn-primary">预订</button></div></div></div>`).join('');
+}
+
+function quickFav(id){
+  const h=hotels.find(x=>x.id===id);
+  const idx=favorites.findIndex(f=>f.id===id);
+  if(idx>=0){favorites.splice(idx,1);toast('已取消收藏');}
+  else{favorites.push(h);toast('已收藏');}
+  localStorage.setItem('jc_favorites',JSON.stringify(favorites));
+  renderHome();
+}
+
+function renderHotels(){
+  const search=localStorage.getItem('jc_search')||'';
+  let list=hotels;
+  if(filterType!=='all')list=list.filter(h=>h.type===filterType);
+  if(filterCity)list=list.filter(h=>h.city===filterCity);
+  if(search)list=list.filter(h=>h.name.includes(search)||h.city.includes(search));
+  document.getElementById('hotel-count').textContent=list.length;
+  document.getElementById('type-filter').innerHTML=types.map(t=>`<div class="filter-chip ${filterType===t.key?'active':''}" onclick="filterType='${t.key}';renderHotels()">${t.icon} ${t.label}</div>`).join('');
+  if(list.length===0){document.getElementById('hotel-list').innerHTML='';document.getElementById('hotel-empty').style.display='flex';}
+  else{document.getElementById('hotel-empty').style.display='none';document.getElementById('hotel-list').innerHTML=list.map(h=>`<div class="hotel-card" onclick="openHotel(${h.id})"><div class="hotel-img"><img src="${h.img}" loading="lazy"><div class="hotel-fav" onclick="event.stopPropagation();quickFav(${h.id})">${favorites.some(f=>f.id===h.id)?'❤️':'🤍'}</div></div><div class="hotel-info"><div><div class="hotel-name">${h.name}</div><div class="hotel-addr">📍 ${h.address}</div><div class="rating">⭐ ${h.rating} (${h.reviews}条)</div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><div class="price">¥${h.rooms[0].price}</div><button class="btn btn-primary">预订</button></div></div></div>`).join('');}
+}
+
+function clearFilters(){filterType='all';filterCity='';localStorage.removeItem('jc_search');document.getElementById('hotel-search').value='';renderHotels();}
+
+function openHotel(id){currentHotel=hotels.find(h=>h.id===id);if(!currentHotel)return;
+  document.getElementById('detail-title').textContent=currentHotel.name;
+  document.getElementById('detail-img').src=currentHotel.img;
+  document.getElementById('detail-name').textContent=currentHotel.name;
+  document.getElementById('detail-addr').textContent='📍 '+currentHotel.address;
+  document.getElementById('detail-rating').textContent=currentHotel.rating;
+  document.getElementById('detail-reviews').textContent=currentHotel.reviews;
+  document.getElementById('detail-desc').textContent=currentHotel.desc;
+  document.getElementById('detail-facilities').innerHTML=currentHotel.facilities.map(f=>`<span class="tag">${f}</span>`).join('');
+  document.getElementById('detail-fav').textContent=favorites.some(f=>f.id===currentHotel.id)?'❤️':'🤍';
+  document.getElementById('room-list').innerHTML=currentHotel.rooms.map(r=>`<div class="room-item"><div class="room-row"><div><div style="font-size:15px;font-weight:600;margin-bottom:6px">${r.name}</div><div style="font-size:12px;color:#666">${r.bed} · ${r.area}㎡</div></div><div style="text-align:right"><div style="margin-bottom:8px"><span style="color:#1a1a2e;font-size:22px;font-weight:700">¥${r.price}</span><span style="font-size:12px;color:#666">/晚</span></div><button class="btn btn-primary" onclick="bookRoom(${r.id})">预订</button></div></div></div>`).join('');
+  showPage('detail');
+}
+
+function bookRoom(roomId){
+  const room=currentHotel.rooms.find(r=>r.id===roomId);if(!room)return;
+  const order={id:'JC'+Date.now(),hotel_id:currentHotel.id,hotel_name:currentHotel.name,hotel_img:currentHotel.img,room_type:room.name,check_in:new Date().toISOString().split('T')[0],check_out:new Date(Date.now()+86400000).toISOString().split('T')[0],nights:1,total:room.price,status:'pending'};
+  orders.unshift(order);
+  localStorage.setItem('jc_orders',JSON.stringify(orders));
+  user.total_spent+=room.price;
+  user.points+=Math.round(room.price/10);
+  if(user.total_spent>=50000)user.level='diamond';
+  else if(user.total_spent>=20000)user.level='gold';
+  else if(user.total_spent>=5000)user.level='silver';
+  localStorage.setItem('jc_user',JSON.stringify(user));
+  updateOrderBadge();
+  toast('🎉 预订成功！祝您入住愉快');
+  setTimeout(()=>showPage('orders'),1500);
+}
+
+function renderOrders(){
+  if(orders.length===0){document.getElementById('orders-list').innerHTML='';document.getElementById('orders-empty').style.display='flex';}
+  else{document.getElementById('orders-empty').style.display='none';document.getElementById('orders-list').innerHTML=orders.map(o=>`<div class="card" style="margin:12px 0"><div style="font-size:12px;color:#666;margin-bottom:8px">订单号：${o.id}</div><div style="display:flex;gap:12px"><div style="width:80px;height:60px;border-radius:10px;overflow:hidden;background:#e8e8e8"><img src="${o.hotel_img}" style="width:100%;height:100%;object-fit:cover"></div><div style="flex:1"><div style="font-size:15px;font-weight:600">${o.hotel_name}</div><div style="font-size:12px;color:#666;margin-top:2px">${o.room_type}</div><div style="font-size:12px;color:#666;margin-top:2px">${o.check_in} ~ ${o.check_out}</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e8"><span style="font-size:18px;font-weight:700;color:#1a1a2e">¥${o.total}</span><span style="font-size:13px;color:#1a1a2e">${o.status==='pending'?'待入住':'已完成'}</span></div></div>`).join('');}
+  updateOrderBadge();
+}
+
+function updateOrderBadge(){
+  const pending=orders.filter(o=>o.status==='pending').length;
+  document.getElementById('order-badge').textContent=pending;
+  document.getElementById('order-badge').style.display=pending>0?'block':'none';
+}
+
+function renderProfile(){
+  document.getElementById('profile-name').textContent=user.nickname;
+  document.getElementById('profile-spent').textContent=user.total_spent;
+  document.getElementById('profile-points').textContent=user.points;
+  const levels={normal:{icon:'🥉',name:'普通会员'},silver:{icon:'🥈',name:'银卡会员'},gold:{icon:'🥇',name:'金卡会员'},diamond:{icon:'💎',name:'钻石会员'}};
+  document.getElementById('profile-level').textContent=levels[user.level]?.icon||'🥉';
+  document.getElementById('profile-level-name').textContent=levels[user.level]?.name||'普通会员';
+  document.getElementById('fav-count').textContent=favorites.length;
+  document.getElementById('coupon-count').textContent=userCoupons.length;
+
+}
+
+// AI 聊天
+let chatMessages=[{id:1,role:'assistant',content:'您好！我是璟程 AI 助手，很高兴为您服务！👋\n\n我可以帮您：\n• 推荐合适的酒店\n• 查询订单信息\n• 解答入住问题\n\n请问有什么可以帮您？'}];
+function renderAI(){document.getElementById('chat-box').innerHTML=chatMessages.map(m=>`<div class="chat-msg ${m.role==='user'?'right':'left'}">${m.content.replace(/\n/g,'<br>')}</div>`).join('');}
+function sendChat(){const input=document.getElementById('chat-input');const text=input.value.trim();if(!text)return;
+  chatMessages.push({id:Date.now(),role:'user',content:text});input.value='';renderAI();
+  setTimeout(()=>{chatMessages.push({id:Date.now()+1,role:'assistant',content:getAIResponse(text)});renderAI();},1000);}
+function getAIResponse(q){
+  if(q.includes('上海'))return '上海是热门旅游城市，我为您推荐：\n\n🏨 **高端推荐**\n• 璟程·丽思卡尔顿酒店 - 陆家嘴金融中心\n• 璟程·华尔道夫酒店 - 外滩核心地段\n\n🏨 **中端推荐**\n• 璟程·亚朵酒店 - 人文主题\n• 璟程·全季酒店 - 简约设计\n\n您想了解哪家酒店的详情？';
+  if(q.includes('取消')||q.includes('退订'))return '取消订单流程：\n\n1️⃣ 打开「订单」页面\n2️⃣ 找到待入住的订单\n3️⃣ 点击「取消」按钮\n\n⏰ **取消政策**：\n• 入住当天 18:00 前免费取消\n• 18:00 后取消收取首晚房费';
+  if(q.includes('会员')||q.includes('权益'))return '璟程会员权益：\n\n🥉 **普通会员**\n• 预订累积积分\n• 会员专享价\n\n🥈 **银卡会员** (累计¥5000)\n• 积分 1.2 倍加速\n• 延迟退房至 14:00\n\n🥇 **金卡会员** (累计¥20000)\n• 积分 1.5 倍加速\n• 免费早餐\n• 房型升级\n\n💎 **钻石会员** (累计¥50000)\n• 积分 2 倍加速\n• 行政酒廊使用权\n• 免费接送机';
+  if(q.includes('发票'))return '开发票流程：\n\n1️⃣ 入住完成后，在「订单」页面找到该订单\n2️⃣ 点击「申请开票」\n3️⃣ 填写发票抬头和税号\n4️⃣ 提交后 1-3 个工作日开具';
+  return '感谢您的咨询！我可以帮您：\n\n• 🏨 推荐酒店和民宿\n• 📋 查询订单信息\n• 💳 处理退改签\n• 🎁 会员权益咨询\n\n请告诉我您的具体需求！';
+}
+
+// 启动
+init();
+</script>
+</body>
+</html>
